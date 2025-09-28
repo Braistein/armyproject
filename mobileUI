@@ -1,0 +1,183 @@
+--| Services |--
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+local oldGui = LocalPlayer.PlayerGui:FindFirstChild("CustomUI")
+if oldGui then
+    oldGui:Destroy()
+end
+
+--| UI |--
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "CustomUI"
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local background = Instance.new("Frame")
+background.Name = "background"
+background.Parent = ScreenGui
+background.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+background.BorderSizePixel = 0
+background.Position = UDim2.new(0.2, 0, 0.1, 0)
+background.Size = UDim2.new(0.15, 0, 0.6, 0)
+
+local ImageLabel = Instance.new("ImageLabel")
+ImageLabel.Parent = background
+ImageLabel.BackgroundTransparency = 1
+ImageLabel.Size = UDim2.new(0.8, 0, 0.1, 0)
+ImageLabel.Position = UDim2.new(0.1, 0, 0.02, 0)
+ImageLabel.Image = "rbxassetid://100526318905435"
+
+local TextLabel = Instance.new("TextLabel")
+local UITextSizeConstraint = Instance.new("UITextSizeConstraint")
+TextLabel.Parent = background
+TextLabel.BackgroundTransparency = 1
+TextLabel.Position = UDim2.new(0.1, 0, 0.9, 0)
+TextLabel.Size = UDim2.new(0.8, 0, 0.08, 0)
+TextLabel.Font = Enum.Font.Kalam
+TextLabel.Text = "by Waksy"
+TextLabel.TextColor3 = Color3.fromRGB(200, 0, 30)
+TextLabel.TextScaled = true
+TextLabel.TextStrokeTransparency = 0.5
+UITextSizeConstraint.Parent = TextLabel
+UITextSizeConstraint.MaxTextSize = 37
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 7)
+UICorner.Parent = background
+
+local holder = Instance.new("Frame")
+holder.Parent = background
+holder.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+holder.BorderSizePixel = 0
+holder.Position = UDim2.new(0.05, 0, 0.13, 0)
+holder.Size = UDim2.new(0.9, 0, 0.75, 0)
+
+local ScrollingFrame = Instance.new("ScrollingFrame")
+ScrollingFrame.Parent = holder
+ScrollingFrame.Active = true
+ScrollingFrame.BackgroundTransparency = 1
+ScrollingFrame.Size = UDim2.new(1, 0, 1, 0)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+
+local UIPadding = Instance.new("UIPadding")
+UIPadding.Parent = ScrollingFrame
+UIPadding.PaddingTop = UDim.new(0, 5)
+UIPadding.PaddingLeft = UDim.new(0, 5)
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = ScrollingFrame
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 5)
+
+UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 10)
+end)
+
+--| Spell Logic |--
+local selectedSpell = nil
+
+local function getTargetCharacter()
+    local target = Mouse.Target
+    if target then
+        local character = target.Parent
+        if character and Players:GetPlayerFromCharacter(character) then
+            return character
+        end
+    end
+    return nil
+end
+
+local function castSpell(incant, target)
+    local args = {
+        ["IncantationText"] = incant,
+        ["Target"] = target
+    }
+    ReplicatedStorage.RemoteEvents.WitchSpell:FireServer(args)
+end
+
+--| Button Creator |--
+local function createButton(name, incant, needsTarget)
+    local newButton = Instance.new("TextButton")
+    local sizeConstraint = Instance.new("UITextSizeConstraint")
+
+    newButton.Parent = ScrollingFrame
+    newButton.Size = UDim2.new(1, -10, 0, 40)
+    newButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    newButton.Text = name
+    newButton.Font = Enum.Font.Kalam
+    newButton.TextColor3 = Color3.fromRGB(200, 0, 30)
+    newButton.TextScaled = true
+
+    sizeConstraint.Parent = newButton
+    sizeConstraint.MaxTextSize = 39
+
+    newButton.MouseButton1Click:Connect(function()
+        if needsTarget then
+            selectedSpell = {incant = incant, name = name}
+        else
+            castSpell(incant, nil)
+        end
+    end)
+end
+
+Mouse.Button1Down:Connect(function()
+    if selectedSpell then
+        local target = getTargetCharacter()
+        if target then
+            castSpell(selectedSpell.incant, target)
+            selectedSpell = nil
+        end
+    end
+end)
+
+--| Drag |--
+local function drag(frame, parent)
+    parent = parent or frame
+    local dragging, dragInput, dragStart, startPos, renderConnection
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        parent.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = parent.Position
+            dragInput = input
+
+            if renderConnection then renderConnection:Disconnect() end
+            renderConnection = RunService.RenderStepped:Connect(function()
+                if dragging and dragInput then update(dragInput) end
+            end)
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    if renderConnection then
+                        renderConnection:Disconnect()
+                        renderConnection = nil
+                    end
+                end
+            end)
+        end
+    end)
+
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+end
+
+drag(background)
