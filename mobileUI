@@ -77,6 +77,27 @@ UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y + 10)
 end)
 
+--| Toggle Button |--
+local toggleButton = Instance.new("TextButton")
+toggleButton.Parent = ScreenGui
+toggleButton.Size = UDim2.new(0, 120, 0, 40)
+toggleButton.Position = UDim2.new(0.01, 0, 0.05, 0) -- sol üst köşede
+toggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+toggleButton.Text = "Open/Close"
+toggleButton.Font = Enum.Font.Kalam
+toggleButton.TextColor3 = Color3.fromRGB(200, 0, 30)
+toggleButton.TextScaled = true
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 6)
+btnCorner.Parent = toggleButton
+
+local uiVisible = true
+toggleButton.MouseButton1Click:Connect(function()
+    uiVisible = not uiVisible
+    background.Visible = uiVisible
+end)
+
 --| Spell Logic |--
 local selectedSpell = nil
 
@@ -181,6 +202,7 @@ local function drag(frame, parent)
 end
 
 drag(background)
+drag(toggleButton)
 
 --| Spells List |--
 createButton("Errox Femus", "errox femus", true)
