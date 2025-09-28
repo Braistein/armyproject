@@ -181,3 +181,15 @@ local function drag(frame, parent)
 end
 
 drag(background)
+
+--| Spells List |--
+createButton("Errox Femus", "errox femus", true)
+createButton("Incendia", "incendia", true)
+createButton("Delfan Eoten Cor", "delfan eoten cor", true)
+createButton("Ad Somnum", "ad somnum", true)
+createButton("Motus", "motus", false)
+createButton("Silencio", "silencio", true)
+createButton("Mass Snap", "menedek qual surenta", false)
+createButton("Poena Doloris", "poena doloris", true)
+createButton("Lecutio Maxima", "lecutio maxima", true)
+createButton("Strangulo Ventus", "strangulo ventus", true)
